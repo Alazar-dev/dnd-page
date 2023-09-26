@@ -1,4 +1,4 @@
-import { FormEventHandler, SetStateAction, useRef, useState } from 'react';
+import { SetStateAction, useRef, useState } from 'react';
 import { ElementTypes } from '../config/Constants';
 import { useDrop } from 'react-dnd';
 import Container from './Container';
@@ -7,9 +7,9 @@ import useSidebarStore from '../hooks/useSidebarStore';
 const Sidebar = () => {
   const dropbox = useRef(null);
   const [selectedId, onSelected] = useState(null);
-  const { items, updateItem, updateItems } = useSidebarStore();
+  const { items, updateItem } = useSidebarStore();
 
-  const [drag, drop] = useDrop(() => ({
+  const [, drop] = useDrop(() => ({
     accept: [ElementTypes.TEXT, ElementTypes.IMAGE],
     drop: (item: { id: number }, monitor) => {
       const initial = monitor.getInitialSourceClientOffset();
@@ -25,6 +25,7 @@ const Sidebar = () => {
         );
         return;
       }
+
       const yPos =
         final.y > initial.y
           ? initial.y + (final.y - initial.y) - boundRect?.y
@@ -43,19 +44,6 @@ const Sidebar = () => {
     },
   }));
 
-    e.preventDefault();
-    const reader = new FileReader();
-    const file = (e.target as HTMLFormElement).configJson.files[0];
-    reader.readAsText(file);
-    reader.onload = () => {
-      const items = JSON.parse(reader.result as string);
-      updateItems([...items] as never[]);
-    };
-
-    reader.onerror = () => {
-      console.log(reader.error);
-    };
-  };
   const handleSelect: (id: null | number) => void = (id) => {
     onSelected(id as SetStateAction<null>);
   };
