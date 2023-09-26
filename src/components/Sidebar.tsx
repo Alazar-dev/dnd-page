@@ -1,17 +1,15 @@
 import { FormEventHandler, SetStateAction, useRef, useState } from 'react';
-import {Button} from './ui/button.tsx'
-import useItemStore from '../hooks/useItemStore';
 import { ElementTypes } from '../config/Constants';
 import { useDrop } from 'react-dnd';
 import Container from './Container';
-import FormContainer from './FormContainer';
+import useSidebarStore from '../hooks/useSidebarStore';
 
-const Canvas = () => {
+const Sidebar = () => {
   const dropbox = useRef(null);
   const [selectedId, onSelected] = useState(null);
-  const { items, updateItem, updateItems } = useItemStore();
+  const { items, updateItem, updateItems } = useSidebarStore();
 
-  const [, drop] = useDrop(() => ({
+  const [drag, drop] = useDrop(() => ({
     accept: [ElementTypes.TEXT, ElementTypes.IMAGE],
     drop: (item: { id: number }, monitor) => {
       const initial = monitor.getInitialSourceClientOffset();
@@ -45,9 +43,6 @@ const Canvas = () => {
     },
   }));
 
-  const selectedItem = selectedId ? items.find(({ id }) => id === selectedId) : null;
-  const configJSON = JSON.stringify(items);
-  const handleFileUpload: FormEventHandler = (e) => {
     e.preventDefault();
     const reader = new FileReader();
     const file = (e.target as HTMLFormElement).configJson.files[0];
@@ -66,29 +61,12 @@ const Canvas = () => {
   };
 
   return (
-    <div ref={dropbox} className='relative flex flex-row'>
+    <aside ref={dropbox} className='relative flex flex-row w-2/12'>
       <div
         id='canvas'
         ref={drop}
-        className='w-8/12 flex flex-row content-center justify-center p-3 gap-3 flex-wrap min-h-screen border-[2px]'
+        className='w-[1000px]'
       >
-        <a
-          href={`data:text/json;charset=utf-8,${encodeURIComponent(configJSON)}`}
-          download='config-json.json'
-          className='block h-10 px-4 py-2 text-gray-200 bg-gray-800'
-        >
-          Download JSON
-        </a>
-        <form
-          className='border-[1px] border-blue-300 block h-10'
-          method='post'
-          onSubmit={handleFileUpload}
-        >
-          <input type='file' name='configJson' accept='.json' />
-          <Button type="submit" className="bg-gray-700">
-            Save
-          </Button>
-        </form>
         {items.map((item) => (
           <Container
             onChange={updateItem}
@@ -99,11 +77,8 @@ const Canvas = () => {
           />
         ))}
       </div>
-      <aside id='form-editor' className='flex flex-col w-4/12 gap-2 p-2'>
-        <FormContainer onChange={updateItem} selectedItem={selectedItem} />
-      </aside>
-    </div>
+    </aside>
   );
 };
 
-export default Canvas;
+export default Sidebar;
