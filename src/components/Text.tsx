@@ -26,7 +26,7 @@ type Props = {
 
 const Text = (props: Props) => {
   const {
-    fontSize = 16,
+    fontSize = 26,
     id = null,
     position = 'static',
     color = 'blue',
@@ -77,11 +77,14 @@ const Text = (props: Props) => {
       onClick={onClick}
       ref={drag}
       style={{
+        cursor: "pointer",
+        padding: "2px 10px",
         outline: selectedId && selectedId === id ? '1px solid red' : 'none',
         opacity: isDragging ? 0.5 : 1,
         position: position,
         left: left,
         top: top,
+        width: "20%"
       }}
     >
       <div ref={wrapRef}>

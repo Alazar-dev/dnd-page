@@ -1,15 +1,37 @@
 import { FormEventHandler, SetStateAction, useRef, useState } from 'react';
+import { create } from 'zustand';
+import {Button} from './ui/button.tsx'
 
-import { DefaultItemProps, ElementTypes } from '../config/Constants';
+import { ElementTypes } from '../config/Constants';
 import { useDrop } from 'react-dnd';
 import Container from './Container';
 import FormContainer from './FormContainer';
 
+const useItemStore = create((set) => ({
+  items: [],
+  updateItem: (id, top, left, position) => set((state) => ({
+    items: state.items.map((item) => {
+      if (item.id == id) {
+        return {
+          ...item,
+          top: top,
+          left: left,
+          position: position,
+        };
+      }
+      return item;
+    }),
+  })),
+  updateItems: (newItems) => set(() => ({
+    items: newItems,
+  })),
+}));
+
 const Canvas = () => {
   const dropbox = useRef(null);
-  const incrementor = useRef(1);
   const [selectedId, onSelected] = useState(null);
-  const [items, setItems] = useState([]);
+  const { items, updateItem, updateItems } = useItemStore();
+
   const [, drop] = useDrop(() => ({
     accept: [ElementTypes.TEXT, ElementTypes.IMAGE],
     drop: (item: { id: number }, monitor) => {
@@ -17,13 +39,13 @@ const Canvas = () => {
       const final = monitor.getSourceClientOffset();
       const boundRect = (dropbox.current as HTMLDivElement | null)?.getBoundingClientRect();
       if (final === null || initial === null || boundRect == null) {
-        updateItems({
-          id: item.id,
-          top: 'auto',
-          left: 'auto',
-          position: 'absolute',
-          type: monitor.getItemType() as string,
-        });
+        updateItem(
+          item.id,
+          'auto',
+          'auto',
+          'absolute',
+          // monitor.getItemType() as string,
+        );
         return;
       }
       const yPos =
@@ -34,45 +56,17 @@ const Canvas = () => {
         final.x > initial.x
           ? initial.x + (final.x - initial.x) - boundRect.x
           : initial.x - (initial.x - final.x) - boundRect.x;
-      updateItems({
-        id: item.id,
-        top: Math.round(yPos),
-        left: Math.round(xPos),
-        position: 'absolute',
-        type: monitor.getItemType() as string,
-      });
+      updateItem(
+        item.id,
+        Math.round(yPos),
+        Math.round(xPos),
+        'absolute',
+        // monitor.getItemType() as string,
+      );
     },
   }));
-  const selectedItem = selectedId ? items.find(({ id }) => id === selectedId) : null;
-  const updateItems: (item: {
-    id: number;
-    text?: string;
-    type?: string;
-    top?: number | string;
-    left?: number | string;
-    position?: string;
-  }) => void = (item) => {
-    setItems((items) => {
-      const list = [...items];
-      if (item.id === null) {
-        const newItem = {
-          ...item,
-          id: incrementor.current++,
-          ...DefaultItemProps[item.type as string],
-        };
-        list.push(newItem as never);
-      } else {
-        const index: number = list.findIndex(({ id }) => id === item.id);
-        const newItem = {
-          ...(list[index] as object),
-          ...item,
-        };
-        list[index] = newItem as never;
-      }
-      return list;
-    });
-  };
 
+  const selectedItem = selectedId ? items.find(({ id }) => id === selectedId) : null;
   const configJSON = JSON.stringify(items);
   const handleFileUpload: FormEventHandler = (e) => {
     e.preventDefault();
@@ -81,7 +75,7 @@ const Canvas = () => {
     reader.readAsText(file);
     reader.onload = () => {
       const items = JSON.parse(reader.result as string);
-      setItems([...items] as never[]);
+      updateItems([...items] as never[]);
     };
 
     reader.onerror = () => {
@@ -93,32 +87,32 @@ const Canvas = () => {
   };
 
   return (
-    <div ref={dropbox} className="relative flex flex-row">
+    <div ref={dropbox} className='relative flex flex-row'>
       <div
-        id="canvas"
+        id='canvas'
         ref={drop}
-        className="w-8/12 flex flex-row content-start p-3 gap-3 flex-wrap min-h-screen border-[2px]"
+        className='w-8/12 flex flex-row content-center justify-center p-3 gap-3 flex-wrap min-h-screen border-[2px]'
       >
         <a
           href={`data:text/json;charset=utf-8,${encodeURIComponent(configJSON)}`}
-          download="config-json.json"
-          className="block h-10 px-4 py-2 text-gray-200 bg-blue-500"
+          download='config-json.json'
+          className='block h-10 px-4 py-2 text-gray-200 bg-gray-800'
         >
           Download JSON
         </a>
         <form
-          className="border-[1px] border-blue-300 block h-10"
-          method="post"
+          className='border-[1px] border-blue-300 block h-10'
+          method='post'
           onSubmit={handleFileUpload}
         >
-          <input type="file" name="configJson" accept=".json" />
-          <button className="px-4 py-2 text-gray-200 bg-blue-600" type="submit">
+          <input type='file' name='configJson' accept='.json' />
+          <Button type="submit" className="bg-gray-700">
             Save
-          </button>
+          </Button>
         </form>
         {items.map((item) => (
           <Container
-            onChange={updateItems}
+            onChange={updateItem}
             onSelected={handleSelect}
             selectedId={selectedId}
             key={(item as { id: number }).id}
@@ -126,8 +120,8 @@ const Canvas = () => {
           />
         ))}
       </div>
-      <aside id="form-editor" className="flex flex-col w-4/12 gap-2 p-2">
-        <FormContainer onChange={updateItems} selectedItem={selectedItem} />
+      <aside id='form-editor' className='flex flex-col w-4/12 gap-2 p-2'>
+        <FormContainer onChange={updateItem} selectedItem={selectedItem} />
       </aside>
     </div>
   );
